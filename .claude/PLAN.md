@@ -43,13 +43,17 @@ monarch-rl-examples/
 │   └── 05_async_rl.md              # The full loop explained
 │
 ├── examples/
+│   │   # Part 1: Monarch Fundamentals
 │   ├── 01_hello_actor.py           # Minimal actor example
 │   ├── 02_actor_mesh.py            # Mesh + adverbs (call, broadcast, etc)
 │   ├── 03_rdma_transfer.py         # Control plane vs data plane
-│   ├── 04_weight_sync.py           # CPU staging + RDMA pattern
-│   ├── 05_simple_service.py        # Route + round robin from scratch
-│   ├── 06_dtensor_reshard.py       # Steal from dtensor_transfer
-│   └── 07_async_rl_train.py        # Real training with Qwen 0.7B
+│   ├── 04_controllers.py           # get_or_spawn_controller, service discovery
+│   ├── 05_supervision.py           # __supervise__ hook, fault detection
+│   │   # Part 2: RL Infrastructure
+│   ├── 06_simple_service.py        # Route + round robin from scratch
+│   ├── 07_weight_sync.py           # CPU staging + RDMA pattern
+│   ├── 08_dtensor_reshard.py       # Steal from dtensor_transfer
+│   └── 09_async_rl_train.py        # Real training with Qwen 0.7B
 │
 ├── diagrams/                       # ASCII diagrams for docs
 │   ├── blocking_pg.md              # Traditional PG approach
@@ -134,6 +138,8 @@ monarch-rl-examples/
 
 ## Examples Outline
 
+### Part 1: Monarch Fundamentals
+
 ### 01_hello_actor.py
 **Concepts:** Actor, endpoint, this_proc, spawn, call_one
 
@@ -165,7 +171,44 @@ monarch-rl-examples/
 # Compare: passing tensor directly vs RDMA
 ```
 
-### 04_weight_sync.py
+### 04_controllers.py
+**Concepts:** get_or_spawn_controller, singleton actors, service discovery
+
+```python
+# ~60 lines
+# Multiple actors finding the same controller by name
+# First caller creates, subsequent callers get existing
+# No need to pass references around
+# Example: shared metrics aggregator or config store
+```
+
+### 05_supervision.py
+**Concepts:** __supervise__ hook, fault detection, parent-child relationships
+
+```python
+# ~60 lines
+# Parent actor spawns child actors
+# Child actor fails (crashes or raises)
+# Parent's __supervise__ is called with failure info
+# Show how to log, recover, or propagate the failure
+```
+
+### Part 2: RL Infrastructure
+
+### 06_simple_service.py
+**Concepts:** Service abstraction, route, round robin, retry on failure
+
+```python
+# ~80 lines
+# Multiple replica actors (e.g., 4 generators)
+# Service wrapper that:
+#   - Tracks healthy replicas
+#   - Routes requests round-robin
+#   - Retries on failure
+# Demo: call service.route(request) multiple times
+```
+
+### 07_weight_sync.py
 **Concepts:** CPU staging, async transfer, weight sync pattern
 
 ```python
@@ -180,20 +223,7 @@ monarch-rl-examples/
 # Show timeline of operations
 ```
 
-### 05_simple_service.py
-**Concepts:** Service abstraction, route, round robin
-
-```python
-# ~80 lines
-# Multiple replica actors (e.g., 4 generators)
-# Service wrapper that:
-#   - Tracks healthy replicas
-#   - Routes requests round-robin
-#   - Retries on failure
-# Demo: call service.route(request) multiple times
-```
-
-### 06_dtensor_reshard.py
+### 08_dtensor_reshard.py
 **Concepts:** DTensor, different shardings, overlap transfer
 
 ```python
@@ -204,7 +234,7 @@ monarch-rl-examples/
 # Show overlap computation concept
 ```
 
-### 07_async_rl_train.py
+### 09_async_rl_train.py
 **Concepts:** Full async RL loop, real training
 
 ```python
@@ -213,7 +243,7 @@ monarch-rl-examples/
 #   - Generator (Qwen 2.5 0.7B via HuggingFace)
 #   - Trainer (simple policy gradient)
 #   - Replay buffer (in-memory, policy version tracking)
-#   - Weight sync (using pattern from 04)
+#   - Weight sync (using pattern from 07)
 #
 # Two async loops:
 #   - continuous_rollouts(): generate → score → buffer
@@ -381,9 +411,9 @@ As you slide from sync → async:
 | Source | What to take | For |
 |--------|--------------|-----|
 | `remote_tensor.py` | RDMABuffer wrapping pattern | 03_rdma_transfer.py |
-| `remote_tensor.py` | IPC vs RDMA transport selection | 04_weight_sync.py |
-| `gather.py` | Basic gather approach | 06_dtensor_reshard.py |
-| `routed.py` | Overlap computation concept | 06_dtensor_reshard.py |
+| `remote_tensor.py` | IPC vs RDMA transport selection | 07_weight_sync.py |
+| `gather.py` | Basic gather approach | 08_dtensor_reshard.py |
+| `routed.py` | Overlap computation concept | 08_dtensor_reshard.py |
 | `README.md` | Performance numbers, diagrams | docs/04_resharding.md |
 
 ---
@@ -391,19 +421,21 @@ As you slide from sync → async:
 ## Priority Order
 
 **P0 (Must have for podcast):**
-1. 02_weight_sync.md + 04_weight_sync.py - Weight sync patterns
+1. 02_weight_sync.md + 07_weight_sync.py - Weight sync patterns
 2. 03_rdma_transfer.py - Sets up the mental model
-3. 07_async_rl_train.py - Full training example
+3. 09_async_rl_train.py - Full training example
 4. Key diagrams
 
 **P1 (Should have):**
-5. 05_simple_service.py - Service abstraction
-6. 06_dtensor_reshard.py - Future direction
-7. 00_overview.md, 05_async_rl.md - Context docs
+5. 06_simple_service.py - Service abstraction
+6. 04_controllers.py - Service discovery pattern
+7. 05_supervision.py - Fault detection basics
+8. 08_dtensor_reshard.py - Future direction
+9. 00_overview.md, 05_async_rl.md - Context docs
 
 **P2 (Nice to have):**
-8. Resource utilization visualization
-9. 01_hello_actor.py, 02_actor_mesh.py - Basics (may be covered by others)
+10. Resource utilization visualization
+11. 01_hello_actor.py, 02_actor_mesh.py - Basics (may be covered by others)
 
 ---
 

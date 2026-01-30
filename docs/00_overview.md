@@ -212,19 +212,28 @@ What we'll show: DTensor-aware transfer that computes overlaps and only moves wh
 
 ## What We'll Build
 
-Seven examples, building up:
+Nine examples in two parts:
+
+**Part 1: Monarch Fundamentals**
 
 | Example | What it shows |
 |---------|---------------|
 | 01 | Hello Actor - the basic building block |
-| 02 | Actor Mesh - running on multiple GPUs |
+| 02 | Actor Mesh - running on multiple processes |
 | 03 | RDMA Transfer - control plane vs data plane |
-| 04 | Weight Sync - the CPU staging pattern |
-| 05 | Simple Service - routing to healthy replicas |
-| 06 | DTensor Reshard - different shardings |
-| 07 | Async RL Train - putting it all together |
+| 04 | Controllers - service discovery by name |
+| 05 | Supervision - parent handling child failures |
 
-By example 07, you'll have a working async RL system training a real model, printing trajectories, and showing reward improvement.
+**Part 2: RL Infrastructure**
+
+| Example | What it shows |
+|---------|---------------|
+| 06 | Simple Service - routing to healthy replicas |
+| 07 | Weight Sync - the CPU staging pattern |
+| 08 | DTensor Reshard - different shardings |
+| 09 | Async RL Train - putting it all together |
+
+By example 09, you'll have a working async RL system training a real model, printing trajectories, and showing reward improvement.
 
 ## Prerequisites
 
